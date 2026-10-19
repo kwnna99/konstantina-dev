@@ -47,6 +47,7 @@ describe('blocks', () => {
   it('stack: shows focus line and all 11 tags in order', () => {
     const w = block('stack')
     expect(w.text()).toContain('Frontend-focused, full-stack')
+    expect(w.text()).not.toContain(content.stack.tagline)
     expect(w.findAll('li').map(l => l.text())).toEqual(content.stack.tags.map(t => t.name))
     expect(w.findAll('li')).toHaveLength(11)
   })
@@ -89,6 +90,7 @@ describe('blocks', () => {
     const w = block('contact')
     const links = w.findAll('a')
     expect(links.map(a => a.text())).toEqual(['GitHub', 'LinkedIn', 'Email', 'View source'])
+    expect(links[2].attributes('href')).toMatch(/^mailto:/)
     expect(links[2].attributes('href')).toBe(content.links.email)
     expect(links[3].attributes('href')).toBe(content.links.source)
     expect(w.text()).toContain('Occasionally open to small freelance projects.')

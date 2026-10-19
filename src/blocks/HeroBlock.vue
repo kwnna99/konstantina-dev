@@ -58,10 +58,12 @@ const { identity, links } = content
   font-weight: 500;
   text-decoration: none;
   color: var(--success);
-  background: color-mix(in srgb, var(--success) 12%, var(--page));
+  background: transparent;
+  border: 1px solid var(--success);
 }
 .pill:hover {
-  background: color-mix(in srgb, var(--success) 20%, var(--page));
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .pill:focus-visible {
   outline: 2px solid var(--focus);
