@@ -32,7 +32,7 @@ export const content: Content = {
     { title: 'Automate triage', body: 'Automated flows that cut support-ticket triage time.' },
   ],
   stack: {
-    tagline: 'Vue/TypeScript first, comfortable across PHP/Laravel and data.',
+    tagline: 'Frontend-focused full-stack lead engineer · Vue, TypeScript, PHP',
     tags: [
       { name: 'Vue.js', color: '#42b883' },
       { name: 'TypeScript', color: '#3178c6' },
