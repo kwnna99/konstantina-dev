@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { createEditor, EditorKey } from './editor/store'
 import { resolveShortcut } from './editor/shortcuts'
 import { useMode } from './editor/mode'
@@ -8,12 +8,16 @@ import TopBar from './components/TopBar.vue'
 import LayersPanel from './components/LayersPanel.vue'
 import Canvas from './components/Canvas.vue'
 import Inspector from './components/Inspector.vue'
+import CommandPalette from './components/CommandPalette.vue'
+import { buildCommands } from './editor/commands'
 
 const editor = createEditor()
 provide(EditorKey, editor)
 
-const { mode, isNarrow, setMode, toggle: toggleMode } = useMode()
-const { theme, toggle: toggleTheme } = useTheme()
+const modeApi = useMode()
+const themeApi = useTheme()
+const { mode, isNarrow, setMode, toggle: toggleMode } = modeApi
+const { theme, toggle: toggleTheme } = themeApi
 
 // Preview is for reading: nothing stays selected and no text stays in edit mode.
 // Clearing editingKey makes an open inline edit leave without committing.
@@ -30,8 +34,42 @@ async function openEditor() {
   document.querySelector<HTMLElement>('.mode-btn')?.focus()
 }
 
-// Toggled by the command palette shortcut. The palette itself arrives later.
 const paletteOpen = ref(false)
+
+// A short message shown in the top bar's status live region.
+const notice = ref('')
+let noticeTimer: ReturnType<typeof setTimeout> | null = null
+function notify(msg: string) {
+  notice.value = msg
+  if (noticeTimer) clearTimeout(noticeTimer)
+  noticeTimer = setTimeout(() => {
+    notice.value = ''
+    noticeTimer = null
+  }, 3000)
+}
+
+async function copy(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    return false
+  }
+}
+
+// Built when the palette opens so "Jump to" follows the current block order.
+const commands = computed(() =>
+  paletteOpen.value
+    ? buildCommands({
+        editor,
+        mode: modeApi,
+        theme: themeApi,
+        open: (url) => window.open(url, '_blank', 'noopener'),
+        copy,
+        notify,
+      })
+    : [],
+)
 
 function detectMac(): boolean {
   const nav = navigator as Navigator & { userAgentData?: { platform?: string } }
@@ -48,8 +86,6 @@ function isTyping(): boolean {
 let isMac = false
 
 function onKeydown(e: KeyboardEvent) {
-  // Preview is a plain document; editor shortcuts are off.
-  if (mode.value === 'preview') return
   const editingText = isTyping()
   const action = resolveShortcut(e, {
     isMac,
@@ -58,6 +94,8 @@ function onKeydown(e: KeyboardEvent) {
     hasSelection: editor.selected.value !== null,
   })
   if (!action) return
+  // Preview is a plain document: only the palette and Escape work there.
+  if (mode.value === 'preview' && action !== 'palette' && action !== 'escape') return
   e.preventDefault()
   switch (action) {
     case 'undo':
@@ -94,7 +132,10 @@ onMounted(() => {
   // Capture phase: see the typing state before an inline edit handles the key itself.
   window.addEventListener('keydown', onKeydown, true)
 })
-onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown, true)
+  if (noticeTimer) clearTimeout(noticeTimer)
+})
 </script>
 
 <template>
@@ -103,6 +144,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
       :preview="mode === 'preview'"
       :theme="theme"
       :narrow="isNarrow"
+      :notice="notice"
       @toggle-preview="toggleMode"
       @toggle-theme="toggleTheme"
       @open-palette="paletteOpen = !paletteOpen"
@@ -114,6 +156,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
     <button v-if="isNarrow && mode === 'preview'" type="button" class="open-editor" @click="openEditor">
       Open in editor <span aria-hidden="true">✎</span>
     </button>
+    <CommandPalette v-if="paletteOpen" :commands="commands" @close="paletteOpen = false" />
   </div>
 </template>
 

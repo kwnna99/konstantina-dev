@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import { useEditor } from '../editor/store'
 import Icon from './Icon.vue'
 
-withDefaults(defineProps<{ preview?: boolean; theme?: 'light' | 'dark'; narrow?: boolean }>(), {
+withDefaults(defineProps<{ preview?: boolean; theme?: 'light' | 'dark'; narrow?: boolean; notice?: string }>(), {
   preview: false,
+  notice: '',
   theme: 'light',
   narrow: false,
 })
@@ -14,6 +16,14 @@ const emit = defineEmits<{
 }>()
 
 const editor = useEditor()
+
+// Server and first client render say ⌘K; the real platform is read after mount.
+const hintKeys = ref('⌘K')
+onMounted(() => {
+  const nav = navigator as Navigator & { userAgentData?: { platform?: string } }
+  const mac = /Mac|iPhone|iPad/.test(nav.userAgentData?.platform ?? nav.platform ?? '')
+  hintKeys.value = mac ? '⌘K' : 'Ctrl K'
+})
 </script>
 
 <template>
@@ -35,11 +45,12 @@ const editor = useEditor()
 
     <div class="right">
       <button type="button" class="btn chrome hint" @click="emit('open-palette')">
-        <span aria-hidden="true">⌘K</span>
+        <span aria-hidden="true">{{ hintKeys }}</span>
         <span class="sr">Open command palette</span>
       </button>
-      <span class="status chrome" role="status" aria-live="polite">
-        <template v-if="editor.status.value === 'saved'">● All changes saved</template>
+      <span class="status" :class="notice ? 'notice' : 'chrome'" role="status" aria-live="polite">
+        <template v-if="notice">{{ notice }}</template>
+        <template v-else-if="editor.status.value === 'saved'">● All changes saved</template>
         <template v-else-if="editor.status.value === 'saving'">Saving…</template>
         <template v-else>● All changes saved (just kidding, it resets on reload)</template>
       </span>
@@ -150,8 +161,12 @@ button.tool:disabled {
   }
   .deco,
   .hint,
-  .status {
+  .status:not(.notice) {
     display: none;
+  }
+  .status.notice {
+    font-size: 11.5px;
+    max-width: 38vw;
   }
 }
 @media (prefers-reduced-motion: reduce) {
