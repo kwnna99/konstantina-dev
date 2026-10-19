@@ -2,9 +2,10 @@
 import { useEditor } from '../editor/store'
 import Icon from './Icon.vue'
 
-withDefaults(defineProps<{ preview?: boolean; theme?: 'light' | 'dark' }>(), {
+withDefaults(defineProps<{ preview?: boolean; theme?: 'light' | 'dark'; narrow?: boolean }>(), {
   preview: false,
   theme: 'light',
+  narrow: false,
 })
 const emit = defineEmits<{
   'toggle-preview': []
@@ -42,14 +43,13 @@ const editor = useEditor()
         <template v-else-if="editor.status.value === 'saving'">Saving…</template>
         <template v-else>● All changes saved (just kidding, it resets on reload)</template>
       </span>
-      <button type="button" class="btn primary" @click="emit('toggle-preview')">
-        {{ preview ? 'Back to editor' : 'Preview' }}
+      <button type="button" class="btn primary mode-btn" @click="emit('toggle-preview')">
+        {{ preview ? 'Back to editor' : narrow ? 'Done' : 'Preview' }}
       </button>
       <button
         type="button"
         class="tool theme"
-        aria-label="Toggle theme"
-        :aria-pressed="theme === 'dark'"
+        :aria-label="theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
         @click="emit('toggle-theme')"
       >
         <Icon :name="theme === 'dark' ? 'moon' : 'sun'" />
@@ -70,6 +70,9 @@ const editor = useEditor()
   font-size: 13px;
 }
 .crumb {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -135,6 +138,21 @@ button.tool:disabled {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+/* Narrow screens: keep only what fits and works by touch. */
+@media (max-width: 1023.98px) {
+  .bar {
+    gap: 8px;
+    padding: 0 12px;
+  }
+  .tools {
+    margin-left: 4px;
+  }
+  .deco,
+  .hint,
+  .status {
+    display: none;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   * {

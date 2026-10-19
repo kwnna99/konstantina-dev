@@ -2,14 +2,19 @@
 import { computed } from 'vue'
 import type { BlockId, BlockMeta } from '../content'
 import { useEditor } from '../editor/store'
+import { useMode } from '../editor/mode'
 
 const props = defineProps<{ meta: BlockMeta; index: number }>()
 const emit = defineEmits<{ 'dragstart-block': [id: BlockId, ev: DragEvent] }>()
 
 const editor = useEditor()
+const { mode } = useMode()
+// In preview the frame is plain layout: not focusable, not selectable.
+const interactive = computed(() => mode.value === 'editor')
 const isSelected = computed(() => editor.selected.value === props.meta.id)
 
 function onClick(ev: MouseEvent) {
+  if (!interactive.value) return
   // Clicks inside a text that is being edited belong to the text.
   if ((ev.target as Element | null)?.closest('[contenteditable]')) return
   editor.select(props.meta.id)
@@ -17,7 +22,7 @@ function onClick(ev: MouseEvent) {
 
 function onKeydown(ev: KeyboardEvent) {
   // Only react when the frame itself has focus, never to keys typed in children.
-  if (ev.target !== ev.currentTarget) return
+  if (!interactive.value || ev.target !== ev.currentTarget) return
   if (ev.key === 'Enter' || ev.key === ' ') {
     ev.preventDefault()
     editor.select(props.meta.id)
@@ -28,11 +33,11 @@ function onKeydown(ev: KeyboardEvent) {
 <template>
   <div
     class="blk"
-    :class="{ sel: isSelected }"
-    tabindex="0"
-    role="option"
-    :aria-selected="isSelected"
-    :aria-label="`${meta.label} block`"
+    :class="{ sel: interactive && isSelected }"
+    :tabindex="interactive ? 0 : undefined"
+    :role="interactive ? 'option' : undefined"
+    :aria-selected="interactive ? isSelected : undefined"
+    :aria-label="interactive ? `${meta.label} block` : undefined"
     @click="onClick"
     @keydown="onKeydown"
   >

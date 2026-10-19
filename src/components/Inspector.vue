@@ -37,8 +37,27 @@ const meta = computed(() => content.blocks.find((b) => b.id === editor.selected.
   overflow: auto;
 }
 .insp.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  max-height: 50vh;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   border-left: 0;
   border-top: 1px solid var(--border);
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .insp.sheet {
+    animation: sheet-in 0.18s ease-out;
+  }
+  @keyframes sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+  }
 }
 h2 {
   margin: 0 0 2px;

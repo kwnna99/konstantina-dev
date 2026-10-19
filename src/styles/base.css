@@ -31,3 +31,73 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * Modes. index.html sets <html data-mode="editor|preview"> before first paint.
+ * Without JavaScript there is no data-mode: wide screens show the editor layout
+ * and narrow screens show the preview (see the media query further down).
+ */
+
+/* Preview: a plain, centred document. Editor chrome (.chrome) is hidden. */
+:root[data-mode='preview'] .chrome {
+  display: none;
+}
+:root[data-mode='preview'] .app {
+  grid-template-columns: minmax(0, 1fr);
+}
+:root[data-mode='preview'] .canvas {
+  background-color: var(--page);
+  background-image: none;
+  padding: 32px 24px 48px;
+}
+:root[data-mode='preview'] .page {
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Without JavaScript, controls that need it are hidden. */
+:root:not([data-mode]) .mode-btn,
+:root:not([data-mode]) .theme {
+  display: none;
+}
+
+@media (max-width: 1023.98px) {
+  /* No-JS on a narrow screen: the same preview rules as above. */
+  :root:not([data-mode]) .chrome {
+    display: none;
+  }
+  :root:not([data-mode]) .app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :root:not([data-mode]) .canvas {
+    background-color: var(--page);
+    background-image: none;
+    padding: 32px 24px 48px;
+  }
+  :root:not([data-mode]) .page {
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  /* Narrow screens, either mode: one column, no layers panel. */
+  :root[data-mode] .app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :root[data-mode] .canvas {
+    padding: 16px 8px 96px;
+  }
+  :root[data-mode='editor'] .layers,
+  :root[data-mode='editor'] .blk .handle {
+    display: none;
+  }
+  /* The floating "Open in editor" button replaces the top bar's toggle. */
+  :root[data-mode='preview'] .mode-btn {
+    display: none;
+  }
+  /* Leave room so the inspector sheet never covers the last block. */
+  :root[data-mode='editor'] .app:has(.insp.sheet) .canvas {
+    padding-bottom: 55vh;
+  }
+}

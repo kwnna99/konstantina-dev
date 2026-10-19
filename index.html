@@ -1,8 +1,25 @@
 <!doctype html>
-<html lang="en" data-theme="light" data-mode="editor">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Sets data-mode and data-theme before first paint. Mirrors initialMode/initialTheme in src/editor. -->
+    <script>
+      (function (d, m) {
+        try {
+          d.dataset.mode = new URLSearchParams(location.search).has('preview') || m('(max-width: 1023.98px)').matches ? 'preview' : 'editor'
+        } catch (e) {}
+        var t
+        try {
+          t = localStorage.getItem('kd-theme')
+        } catch (e) {}
+        try {
+          d.dataset.theme = t == 'light' || t == 'dark' ? t : m('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        } catch (e) {}
+      })(document.documentElement, function (q) {
+        return matchMedia(q)
+      })
+    </script>
     <title>Konstantina Roumelioti, Technical Lead, Authoring Tools</title>
   </head>
   <body>

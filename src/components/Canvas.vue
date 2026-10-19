@@ -4,9 +4,13 @@ import { content, type BlockId, type BlockMeta } from '../content'
 import { blockComponents } from '../blocks/registry'
 import { useEditor } from '../editor/store'
 import { useDragReorder } from '../editor/dnd'
+import { useMode } from '../editor/mode'
 import BlockFrame from './BlockFrame.vue'
 
 const editor = useEditor()
+// Preview is a plain document, so the page drops its listbox semantics.
+const { mode } = useMode()
+const isEditor = computed(() => mode.value === 'editor')
 const page = ref<HTMLElement | null>(null)
 
 const metaById = new Map<BlockId, BlockMeta>(content.blocks.map((b) => [b.id, b]))
@@ -45,9 +49,9 @@ function onCanvasClick(ev: MouseEvent) {
     <div
       ref="page"
       class="page"
-      role="listbox"
-      aria-label="Page blocks"
-      aria-orientation="vertical"
+      :role="isEditor ? 'listbox' : undefined"
+      :aria-label="isEditor ? 'Page blocks' : undefined"
+      :aria-orientation="isEditor ? 'vertical' : undefined"
       @dragover="dnd.onDragOver"
       @drop="dnd.onDrop"
       @dragend="dnd.onDragEnd"

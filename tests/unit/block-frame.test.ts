@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest'
-import { defineComponent, h } from 'vue'
+import { afterEach, describe, expect, it } from 'vitest'
+import { defineComponent, h, nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import BlockFrame from '../../src/components/BlockFrame.vue'
 import EditableText from '../../src/components/EditableText.vue'
 import { createEditor, EditorKey } from '../../src/editor/store'
+import { useMode } from '../../src/editor/mode'
+import Canvas from '../../src/components/Canvas.vue'
 import type { BlockMeta } from '../../src/content'
 
 const meta = {
@@ -88,5 +90,41 @@ describe('BlockFrame', () => {
     wrapper.find('h2').element.dispatchEvent(ev)
     expect(ev.defaultPrevented).toBe(false)
     expect(editor.selected.value).toBeNull()
+  })
+})
+
+describe('BlockFrame and Canvas in preview', () => {
+  afterEach(() => {
+    useMode().setMode('editor')
+    history.replaceState(null, '', '/')
+  })
+
+  it('drops listbox/option semantics and selection in preview', async () => {
+    useMode().setMode('preview')
+    const editor = createEditor()
+    const wrapper = mount(
+      defineComponent({
+        provide: { [EditorKey as symbol]: editor },
+        render: () => h(Canvas),
+      }),
+    )
+    await nextTick()
+    const page = wrapper.find('.page')
+    expect(page.attributes('role')).toBeUndefined()
+    expect(page.attributes('aria-label')).toBeUndefined()
+    const blk = wrapper.find('.blk')
+    for (const attr of ['tabindex', 'role', 'aria-selected', 'aria-label']) {
+      expect(blk.attributes(attr)).toBeUndefined()
+    }
+    await blk.trigger('click')
+    await blk.trigger('keydown', { key: 'Enter' })
+    expect(editor.selected.value).toBeNull()
+
+    useMode().setMode('editor')
+    await nextTick()
+    expect(page.attributes('role')).toBe('listbox')
+    expect(blk.attributes('role')).toBe('option')
+    await blk.trigger('click')
+    expect(editor.selected.value).toBe('hero')
   })
 })

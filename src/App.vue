@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, provide, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { createEditor, EditorKey } from './editor/store'
 import { resolveShortcut } from './editor/shortcuts'
+import { useMode } from './editor/mode'
+import { useTheme } from './editor/theme'
 import TopBar from './components/TopBar.vue'
 import LayersPanel from './components/LayersPanel.vue'
 import Canvas from './components/Canvas.vue'
@@ -9,6 +11,24 @@ import Inspector from './components/Inspector.vue'
 
 const editor = createEditor()
 provide(EditorKey, editor)
+
+const { mode, isNarrow, setMode, toggle: toggleMode } = useMode()
+const { theme, toggle: toggleTheme } = useTheme()
+
+// Preview is for reading: nothing stays selected and no text stays in edit mode.
+// Clearing editingKey makes an open inline edit leave without committing.
+watch(mode, (m) => {
+  if (m !== 'preview') return
+  editor.select(null)
+  editor.editingKey.value = null
+})
+
+/** The floating button disappears once clicked, so hand focus to the top bar's Done. */
+async function openEditor() {
+  setMode('editor')
+  await nextTick()
+  document.querySelector<HTMLElement>('.mode-btn')?.focus()
+}
 
 // Toggled by the command palette shortcut. The palette itself arrives later.
 const paletteOpen = ref(false)
@@ -28,6 +48,8 @@ function isTyping(): boolean {
 let isMac = false
 
 function onKeydown(e: KeyboardEvent) {
+  // Preview is a plain document; editor shortcuts are off.
+  if (mode.value === 'preview') return
   const editingText = isTyping()
   const action = resolveShortcut(e, {
     isMac,
@@ -77,14 +99,26 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
 
 <template>
   <div class="app">
-    <TopBar @open-palette="paletteOpen = !paletteOpen" />
+    <TopBar
+      :preview="mode === 'preview'"
+      :theme="theme"
+      :narrow="isNarrow"
+      @toggle-preview="toggleMode"
+      @toggle-theme="toggleTheme"
+      @open-palette="paletteOpen = !paletteOpen"
+    />
     <LayersPanel />
     <Canvas />
-    <Inspector variant="panel" />
+    <Inspector v-if="!isNarrow" variant="panel" />
+    <Inspector v-else-if="mode === 'editor' && editor.selected.value" variant="sheet" />
+    <button v-if="isNarrow && mode === 'preview'" type="button" class="open-editor" @click="openEditor">
+      Open in editor <span aria-hidden="true">✎</span>
+    </button>
   </div>
 </template>
 
 <style scoped>
+/* Mode-specific layout (preview, narrow screens, no-JS) lives in styles/base.css. */
 .app {
   display: grid;
   grid-template-columns: 210px minmax(0, 1fr) 250px;
@@ -93,5 +127,19 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
 }
 .app > :first-child {
   grid-column: 1 / -1;
+}
+.open-editor {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 10;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: #4f46e5;
+  color: #fff;
+  font: 600 14px 'Inter Variable', Inter, system-ui, sans-serif;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
 }
 </style>
