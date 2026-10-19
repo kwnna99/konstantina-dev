@@ -46,7 +46,7 @@ function onKeydown(ev: KeyboardEvent) {
     >
       ⋮⋮
     </button>
-    <section :id="'block-' + meta.id">
+    <section :id="'block-' + meta.id" :aria-labelledby="'heading-' + meta.id">
       <slot />
     </section>
   </div>
@@ -91,35 +91,35 @@ function onKeydown(ev: KeyboardEvent) {
   opacity: 0;
 }
 
-:global([data-mode='editor']) .blk {
+:global([data-mode='editor'] .blk) {
   cursor: pointer;
 }
-:global([data-mode='editor']) .tagl,
-:global([data-mode='editor']) .handle {
+:global([data-mode='editor'] .tagl),
+:global([data-mode='editor'] .handle) {
   display: block;
 }
-:global([data-mode='editor']) .blk:hover {
+:global([data-mode='editor'] .blk:hover) {
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
-:global([data-mode='editor']) .blk:hover .tagl {
+:global([data-mode='editor'] .blk:hover .tagl) {
   opacity: 0.8;
 }
-:global([data-mode='editor']) .blk:hover .handle,
-:global([data-mode='editor']) .blk:focus-within .handle,
-:global([data-mode='editor']) .blk.sel .handle {
+:global([data-mode='editor'] .blk:hover .handle),
+:global([data-mode='editor'] .blk:focus-within .handle),
+:global([data-mode='editor'] .blk.sel .handle) {
   opacity: 1;
 }
-:global([data-mode='editor']) .blk.sel {
+:global([data-mode='editor'] .blk.sel) {
   border-color: var(--accent);
 }
-:global([data-mode='editor']) .blk.sel .tagl {
+:global([data-mode='editor'] .blk.sel .tagl) {
   opacity: 1;
 }
-:global([data-mode='editor']) .blk:focus-visible {
+:global([data-mode='editor'] .blk:focus-visible) {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
-:global([data-mode='editor']) .blk:focus-visible .tagl {
+:global([data-mode='editor'] .blk:focus-visible .tagl) {
   opacity: 1;
 }
 @media (prefers-reduced-motion: reduce) {

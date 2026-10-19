@@ -1,0 +1,144 @@
+<script setup lang="ts">
+import { useEditor } from '../editor/store'
+import Icon from './Icon.vue'
+
+withDefaults(defineProps<{ preview?: boolean; theme?: 'light' | 'dark' }>(), {
+  preview: false,
+  theme: 'light',
+})
+const emit = defineEmits<{
+  'toggle-preview': []
+  'toggle-theme': []
+  'open-palette': []
+}>()
+
+const editor = useEditor()
+</script>
+
+<template>
+  <header class="bar">
+    <img src="/logo.svg" width="26" height="26" alt="" />
+    <div class="crumb">konstantina.dev / <b>home</b></div>
+
+    <div class="tools chrome">
+      <button type="button" class="tool" aria-label="Undo" :disabled="!editor.canUndo.value" @click="editor.undo()">
+        <Icon name="undo" />
+      </button>
+      <button type="button" class="tool" aria-label="Redo" :disabled="!editor.canRedo.value" @click="editor.redo()">
+        <Icon name="redo" />
+      </button>
+      <span class="tool deco" aria-hidden="true"><Icon name="pointer" /></span>
+      <span class="tool deco" aria-hidden="true"><Icon name="frame" /></span>
+      <span class="tool deco" aria-hidden="true"><Icon name="text" /></span>
+    </div>
+
+    <div class="right">
+      <button type="button" class="btn chrome hint" @click="emit('open-palette')">
+        <span aria-hidden="true">⌘K</span>
+        <span class="sr">Open command palette</span>
+      </button>
+      <span class="status chrome" role="status" aria-live="polite">
+        <template v-if="editor.status.value === 'saved'">● All changes saved</template>
+        <template v-else-if="editor.status.value === 'saving'">Saving…</template>
+        <template v-else>● All changes saved (just kidding, it resets on reload)</template>
+      </span>
+      <button type="button" class="btn primary" @click="emit('toggle-preview')">
+        {{ preview ? 'Back to editor' : 'Preview' }}
+      </button>
+      <button
+        type="button"
+        class="tool theme"
+        aria-label="Toggle theme"
+        :aria-pressed="theme === 'dark'"
+        @click="emit('toggle-theme')"
+      >
+        <Icon :name="theme === 'dark' ? 'moon' : 'sun'" />
+      </button>
+    </div>
+  </header>
+</template>
+
+<style scoped>
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 52px;
+  padding: 0 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.crumb {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.crumb b {
+  color: var(--text);
+  font-weight: 600;
+}
+.tools {
+  display: flex;
+  gap: 4px;
+  margin-left: 24px;
+}
+.tool {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  padding: 0;
+  font: inherit;
+}
+button.tool {
+  cursor: pointer;
+}
+button.tool:hover:not(:disabled) {
+  background: var(--canvas);
+}
+button.tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.right {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.status {
+  font-size: 12px;
+  color: var(--success);
+}
+.btn {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 7px;
+  padding: 6px 12px;
+  font: 500 12.5px 'Inter Variable', Inter, system-ui, sans-serif;
+  cursor: pointer;
+}
+.btn.primary {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #fff;
+}
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none;
+  }
+}
+</style>

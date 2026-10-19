@@ -61,7 +61,7 @@ describe('BlockFrame', () => {
     expect(handle.attributes('aria-label')).toBe('Drag How I work block')
     expect(handle.attributes('draggable')).toBe('true')
     expect(wrapper.find('section#block-how').exists()).toBe(true)
-    expect(wrapper.find('section').attributes('aria-labelledby')).toBeUndefined()
+    expect(wrapper.find('section').attributes('aria-labelledby')).toBe('heading-how')
   })
 
   it('emits dragstart-block from the handle', async () => {
