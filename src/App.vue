@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useHead } from '@unhead/vue'
 import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { createEditor, EditorKey } from './editor/store'
 import { resolveShortcut } from './editor/shortcuts'
@@ -10,6 +11,49 @@ import Canvas from './components/Canvas.vue'
 import Inspector from './components/Inspector.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import { buildCommands } from './editor/commands'
+import { content } from './content'
+
+const SITE = 'https://konstantina.dev/'
+const title = `${content.identity.name}, ${content.identity.role}`
+const description = content.identity.intro
+
+useHead({
+  title,
+  htmlAttrs: { lang: 'en' },
+  meta: [
+    { name: 'description', content: description },
+    { name: 'theme-color', content: '#ffffff', media: '(prefers-color-scheme: light)' },
+    { name: 'theme-color', content: '#0f0f12', media: '(prefers-color-scheme: dark)' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: SITE },
+    { property: 'og:title', content: title },
+    { property: 'og:description', content: description },
+    { property: 'og:image', content: SITE + 'og.png' },
+    { property: 'og:image:width', content: '1200' },
+    { property: 'og:image:height', content: '630' },
+    { name: 'twitter:card', content: 'summary_large_image' },
+  ],
+  link: [
+    { rel: 'canonical', href: SITE },
+    { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+    { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+  ],
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Person',
+        name: content.identity.name,
+        jobTitle: content.identity.role,
+        worksFor: { '@type': 'Organization', name: content.identity.company },
+        address: { '@type': 'PostalAddress', addressLocality: 'Athens', addressCountry: 'GR' },
+        url: SITE,
+        sameAs: [content.links.github, content.links.linkedin],
+      }).replace(/</g, '\\u003c'),
+    },
+  ],
+})
 
 const editor = createEditor()
 provide(EditorKey, editor)
