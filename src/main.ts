@@ -6,4 +6,5 @@ import './styles/tokens.css'
 import './styles/base.css'
 import App from './App.vue'
 
-export const createApp = ViteSSG(App)
+// Hydrate the pre-rendered HTML instead of re-rendering it from scratch.
+export const createApp = ViteSSG(App, undefined, { hydration: true })

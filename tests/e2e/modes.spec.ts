@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { waitForApp } from './helpers.ts'
 
 const isNarrow = (page: Page) => page.viewportSize()!.width < 1024
 const html = (page: Page) => page.locator('html')
@@ -7,8 +8,8 @@ const blockOrder = (page: Page) =>
 
 /** Waits until the app has mounted and synced its state from the document. */
 async function mounted(page: Page) {
+  await waitForApp(page)
   await expect(page.getByRole('button', { name: /^Switch to (dark|light) theme$/ })).toBeVisible()
-  await page.waitForFunction(() => document.querySelector('#app')?.hasAttribute('data-v-app'))
 }
 
 test.describe('desktop', () => {
@@ -196,3 +197,69 @@ test.describe('no-JS', () => {
     await expect(page.locator('.layers')).toBeVisible()
   })
 })
+
+test('the inline head script stays under 600 bytes', async ({ request }) => {
+  const body = await (await request.get('/')).text()
+  const head = body.slice(0, body.indexOf('</head>'))
+  const inline = head.match(/<script>([\s\S]*?)<\/script>/)
+  expect(inline).not.toBeNull()
+  expect(Buffer.byteLength(inline![1]!, 'utf8')).toBeLessThan(600)
+  // It runs before any stylesheet so the first paint already has the right mode.
+  expect(head.indexOf('<script>')).toBeLessThan(head.indexOf('rel="stylesheet"'))
+})
+
+const blockedStorage = {
+  'methods throw': () => {
+    const deny = () => {
+      throw new DOMException('The operation is insecure.', 'SecurityError')
+    }
+    Storage.prototype.getItem = deny
+    Storage.prototype.setItem = deny
+  },
+  'localStorage access throws': () => {
+    Object.defineProperty(window, 'localStorage', {
+      get() {
+        throw new DOMException('The operation is insecure.', 'SecurityError')
+      },
+    })
+  },
+}
+
+for (const [name, block] of Object.entries(blockedStorage)) {
+  test(`storage blocked (${name}): mode, theme and toggle still work`, async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (err) => errors.push(err.message))
+    await page.addInitScript(block)
+    await page.emulateMedia({ colorScheme: 'light' })
+
+    await page.goto('/')
+    const probe = await page.evaluate(() => {
+      try {
+        localStorage.getItem('kd-theme')
+        return 'available'
+      } catch {
+        return 'blocked'
+      }
+    })
+    expect(probe).toBe('blocked')
+    await expect(html(page)).toHaveAttribute('data-mode', isNarrow(page) ? 'preview' : 'editor')
+    await expect(html(page)).toHaveAttribute('data-theme', 'light')
+
+    await page.goto('/?preview')
+    await expect(html(page)).toHaveAttribute('data-mode', 'preview')
+    await expect(html(page)).toHaveAttribute('data-theme', 'light')
+    await mounted(page)
+
+    await page.getByRole('button', { name: 'Switch to dark theme' }).click()
+    await expect(html(page)).toHaveAttribute('data-theme', 'dark')
+    await page.getByRole('button', { name: 'Switch to light theme' }).click()
+    await expect(html(page)).toHaveAttribute('data-theme', 'light')
+
+    await page.emulateMedia({ colorScheme: 'dark' })
+    await page.goto('/')
+    await expect(html(page)).toHaveAttribute('data-theme', 'dark')
+    await mounted(page)
+
+    expect(errors).toEqual([])
+  })
+}

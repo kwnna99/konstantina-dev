@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { waitForApp } from './helpers.ts'
 
 
 const layers = (page: Page) => page.getByRole('listbox', { name: 'Layers' }).getByRole('option')
@@ -6,6 +7,7 @@ const inspector = (page: Page) => page.getByRole('complementary', { name: 'Inspe
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
+  await waitForApp(page)
   await expect(layers(page).first()).toHaveText(/Hero/)
 })
 
