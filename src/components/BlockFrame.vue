@@ -35,8 +35,8 @@ function onKeydown(ev: KeyboardEvent) {
     class="blk"
     :class="{ sel: interactive && isSelected }"
     :tabindex="interactive ? 0 : undefined"
-    :role="interactive ? 'option' : undefined"
-    :aria-selected="interactive ? isSelected : undefined"
+    :role="interactive ? 'group' : undefined"
+    :aria-current="interactive && isSelected ? 'true' : undefined"
     :aria-label="interactive ? `${meta.label} block` : undefined"
     @click="onClick"
     @keydown="onKeydown"
@@ -71,8 +71,8 @@ function onKeydown(ev: KeyboardEvent) {
   position: absolute;
   top: -11px;
   left: 12px;
-  background: var(--accent);
-  color: #fff;
+  background: var(--primary);
+  color: var(--on-primary);
   font-size: 10.5px;
   font-weight: 600;
   padding: 2px 7px;
@@ -107,7 +107,7 @@ function onKeydown(ev: KeyboardEvent) {
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 :global([data-mode='editor'] .blk:hover .tagl) {
-  opacity: 0.8;
+  opacity: 1;
 }
 :global([data-mode='editor'] .blk:hover .handle),
 :global([data-mode='editor'] .blk:focus-within .handle),

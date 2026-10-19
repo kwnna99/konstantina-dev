@@ -44,7 +44,7 @@ test.describe('desktop', () => {
     await page.goto('/')
     await mounted(page)
     await page.locator('#block-stack').click()
-    await expect(page.getByRole('option', { name: 'Stack block' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('group', { name: 'Stack block' })).toHaveAttribute('aria-current', 'true')
     const headline = page.locator('#block-hero .headline')
     await headline.dblclick()
     await expect(headline).toHaveAttribute('contenteditable', /.+/)
@@ -56,7 +56,7 @@ test.describe('desktop', () => {
     await expect(headline).toHaveText('zzz')
 
     await page.getByRole('button', { name: 'Back to editor' }).click()
-    await expect(page.getByRole('option', { name: 'Stack block' })).toHaveAttribute('aria-selected', 'false')
+    await expect(page.getByRole('group', { name: 'Stack block' })).not.toHaveAttribute('aria-current', 'true')
   })
 
   test('desktop preview hides outlines and handles', async ({ page }) => {
@@ -71,9 +71,9 @@ test.describe('desktop', () => {
     await expect(page.locator('.canvas')).toHaveCSS('background-image', 'none')
     await expect(page.locator('.page')).toHaveCSS('box-shadow', 'none')
 
-    // A plain document: no listbox, no options, no focusable frames.
+    // A plain document: no layers list, no block groups, no focusable frames.
     await expect(page.getByRole('listbox')).toHaveCount(0)
-    await expect(page.getByRole('option')).toHaveCount(0)
+    await expect(page.getByRole('group', { name: /block$/ })).toHaveCount(0)
     await expect(page.locator('.blk[tabindex]')).toHaveCount(0)
     await hero.click()
     await expect(page.locator('.blk.sel')).toHaveCount(0)

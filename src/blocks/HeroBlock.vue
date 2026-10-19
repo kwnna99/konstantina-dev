@@ -30,7 +30,7 @@ const { identity, links } = content
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1.05;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 @supports (background-clip: text) or (-webkit-background-clip: text) {
   .headline {

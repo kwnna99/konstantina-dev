@@ -40,7 +40,7 @@ test('layers click scrolls & selects', async ({ page }) => {
   await layers(page).filter({ hasText: 'Contact' }).click()
   await expect(page.locator('#block-contact')).toBeInViewport()
   await expect(layers(page).filter({ hasText: 'Contact' })).toHaveAttribute('aria-selected', 'true')
-  await expect(page.getByRole('option', { name: 'Contact block' })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('group', { name: 'Contact block' })).toHaveAttribute('aria-current', 'true')
 })
 
 test('drag handle reorders, undo restores, redo reapplies', async ({ page }) => {
@@ -73,7 +73,7 @@ test('Alt+ArrowDown moves selected block; edges are no-ops', async ({ page }) =>
   await page.keyboard.press('Alt+ArrowDown')
   await expect(layers(page).first()).toHaveText(/Now/)
   await expect(layers(page).nth(1)).toHaveText(/Hero/)
-  await expect(page.locator('#block-hero').locator('xpath=ancestor::*[@role="option"]')).toBeFocused()
+  await expect(page.locator('#block-hero').locator('xpath=ancestor::*[@role="group"][1]')).toBeFocused()
   await layers(page).last().click()
   await page.keyboard.press('Alt+ArrowDown')
   await expect(layers(page).last()).toHaveText(/Contact/)

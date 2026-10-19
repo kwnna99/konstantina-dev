@@ -47,28 +47,41 @@ async function start() {
   }
 }
 
-function finish() {
-  editing.value = false
-  if (editor.editingKey.value === props.textKey) editor.editingKey.value = null
+/**
+ * The edited element is replaced when editing ends, which would drop keyboard
+ * focus to <body>. Hand it to the enclosing block instead.
+ */
+async function restoreFocus() {
+  const block = el.value?.closest<HTMLElement>('.blk') ?? null
+  await nextTick()
+  block?.focus({ preventScroll: true })
 }
 
-function commit() {
+function finish(refocus: boolean) {
+  editing.value = false
+  if (editor.editingKey.value === props.textKey) editor.editingKey.value = null
+  if (refocus) void restoreFocus()
+}
+
+function commit(refocus = false) {
   if (!editing.value) return
   const value = (el.value?.textContent ?? '').replace(/\s*[\r\n]+\s*/g, ' ')
   editor.setText(props.textKey, value, props.original)
-  finish()
+  finish(refocus)
 }
 
 function cancel() {
   if (!editing.value) return
-  finish()
+  finish(true)
 }
 
 function onKeydown(ev: KeyboardEvent) {
   if (!editing.value) return
+  // An Enter that confirms an IME candidate belongs to the composition (229 = legacy IME key code).
+  if (ev.isComposing || ev.keyCode === 229) return
   if (ev.key === 'Enter') {
     ev.preventDefault()
-    commit()
+    commit(true)
   } else if (ev.key === 'Escape') {
     ev.preventDefault()
     cancel()
@@ -104,7 +117,11 @@ function onPaste(ev: ClipboardEvent) {
 watch(
   () => editor.editingKey.value,
   (key) => {
-    if (editing.value && key !== props.textKey) editing.value = false
+    if (!editing.value || key === props.textKey) return
+    const hadFocus = document.activeElement === el.value
+    editing.value = false
+    // A reset or preview switch (key cleared) returns focus; another field taking over keeps its own.
+    if (key === null && hadFocus) void restoreFocus()
   },
 )
 </script>
@@ -121,7 +138,7 @@ watch(
     :spellcheck="editing ? true : undefined"
     @dblclick="start"
     @keydown="onKeydown"
-    @blur="commit"
+    @blur="commit()"
     @paste="onPaste"
     >{{ text }}</component
   >

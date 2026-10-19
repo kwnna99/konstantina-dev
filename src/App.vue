@@ -82,15 +82,20 @@ const paletteOpen = ref(false)
 
 // A short message shown in the top bar's status live region.
 const notice = ref('')
+// What screen readers hear; kept apart from the visible chip so it can be emptied and refilled.
+const announce = ref('')
 let noticeTimer: ReturnType<typeof setTimeout> | null = null
 async function notify(msg: string) {
   // Clear first so an identical repeated notice is announced again.
   notice.value = ''
+  announce.value = ''
   await nextTick()
   notice.value = msg
+  announce.value = msg
   if (noticeTimer) clearTimeout(noticeTimer)
   noticeTimer = setTimeout(() => {
     notice.value = ''
+    announce.value = ''
     noticeTimer = null
   }, 3000)
 }
@@ -192,6 +197,7 @@ onUnmounted(() => {
       :theme="theme"
       :narrow="isNarrow"
       :notice="notice"
+      :announce="announce"
       @toggle-preview="toggleMode"
       @toggle-theme="toggleTheme"
       @open-palette="paletteOpen = !paletteOpen"
@@ -226,8 +232,8 @@ onUnmounted(() => {
   border: 0;
   border-radius: 999px;
   padding: 12px 18px;
-  background: #4f46e5;
-  color: #fff;
+  background: var(--primary);
+  color: var(--on-primary);
   font: 600 14px 'Inter Variable', Inter, system-ui, sans-serif;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
   cursor: pointer;

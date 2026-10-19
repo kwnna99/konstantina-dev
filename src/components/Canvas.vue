@@ -45,13 +45,12 @@ function onCanvasClick(ev: MouseEvent) {
 </script>
 
 <template>
-  <div class="canvas" @click="onCanvasClick">
+  <main class="canvas" @click="onCanvasClick">
     <div
       ref="page"
       class="page"
-      :role="isEditor ? 'listbox' : undefined"
+      :role="isEditor ? 'group' : undefined"
       :aria-label="isEditor ? 'Page blocks' : undefined"
-      :aria-orientation="isEditor ? 'vertical' : undefined"
       @dragover="dnd.onDragOver"
       @drop="dnd.onDrop"
       @dragend="dnd.onDragEnd"
@@ -72,7 +71,7 @@ function onCanvasClick(ev: MouseEvent) {
         :style="{ top: indicatorTop + 'px' }"
       ></span>
     </div>
-  </div>
+  </main>
 </template>
 
 <style scoped>

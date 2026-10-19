@@ -29,13 +29,13 @@ function setup(slot?: () => unknown) {
 }
 
 describe('BlockFrame', () => {
-  it('click selects and sets aria-selected', async () => {
+  it('click selects and sets aria-current', async () => {
     const { wrapper, editor } = setup()
     const blk = wrapper.find('.blk')
-    expect(blk.attributes('aria-selected')).toBe('false')
+    expect(blk.attributes('aria-current')).toBeUndefined()
     await blk.trigger('click')
     expect(editor.selected.value).toBe('how')
-    expect(blk.attributes('aria-selected')).toBe('true')
+    expect(blk.attributes('aria-current')).toBe('true')
     expect(blk.classes()).toContain('sel')
   })
 
@@ -55,7 +55,7 @@ describe('BlockFrame', () => {
     const { wrapper } = setup()
     const blk = wrapper.find('.blk')
     expect(blk.attributes('tabindex')).toBe('0')
-    expect(blk.attributes('role')).toBe('option')
+    expect(blk.attributes('role')).toBe('group')
     expect(blk.attributes('aria-label')).toBe('How I work block')
     expect(wrapper.find('.tagl').text()).toBe('How I work block')
     expect(wrapper.find('.tagl').attributes('aria-hidden')).toBe('true')
@@ -99,7 +99,7 @@ describe('BlockFrame and Canvas in preview', () => {
     history.replaceState(null, '', '/')
   })
 
-  it('drops listbox/option semantics and selection in preview', async () => {
+  it('drops group semantics and selection in preview', async () => {
     useMode().setMode('preview')
     const editor = createEditor()
     const wrapper = mount(
@@ -113,7 +113,7 @@ describe('BlockFrame and Canvas in preview', () => {
     expect(page.attributes('role')).toBeUndefined()
     expect(page.attributes('aria-label')).toBeUndefined()
     const blk = wrapper.find('.blk')
-    for (const attr of ['tabindex', 'role', 'aria-selected', 'aria-label']) {
+    for (const attr of ['tabindex', 'role', 'aria-current', 'aria-label']) {
       expect(blk.attributes(attr)).toBeUndefined()
     }
     await blk.trigger('click')
@@ -122,8 +122,8 @@ describe('BlockFrame and Canvas in preview', () => {
 
     useMode().setMode('editor')
     await nextTick()
-    expect(page.attributes('role')).toBe('listbox')
-    expect(blk.attributes('role')).toBe('option')
+    expect(page.attributes('role')).toBe('group')
+    expect(blk.attributes('role')).toBe('group')
     await blk.trigger('click')
     expect(editor.selected.value).toBe('hero')
   })

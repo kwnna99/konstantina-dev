@@ -9,8 +9,11 @@
   --border: #e4e4e7;
   --text: #18181b;
   --muted: #52525b;
-  --faint: #71717a;
+  --faint: #6b6b73; /* 4.8:1 on --canvas */
   --accent: #6366f1;
+  --accent-text: #4f46e5; /* accent as text: 5.7:1 on --canvas */
+  --primary: #4f46e5; /* solid fills carrying white text: 6.3:1 */
+  --on-primary: #ffffff;
   --accent-2: #ec4899;
   --accent-soft: #eef2ff;
   --success: #15803d;
@@ -28,6 +31,9 @@
   --muted: #a1a1aa;
   --faint: #a1a1aa;
   --accent: #6366f1;
+  --accent-text: #818cf8; /* 5.9:1 on --page */
+  --primary: #4f46e5;
+  --on-primary: #ffffff;
   --accent-2: #ec4899;
   --accent-soft: #272a4a;
   --success: #4ade80;

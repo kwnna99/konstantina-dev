@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useEditor } from '../editor/store'
 import Icon from './Icon.vue'
 
-const props = withDefaults(defineProps<{ preview?: boolean; theme?: 'light' | 'dark'; narrow?: boolean; notice?: string }>(), {
+const props = withDefaults(defineProps<{ preview?: boolean; theme?: 'light' | 'dark'; narrow?: boolean; notice?: string; announce?: string }>(), {
   preview: false,
   notice: '',
+  announce: '',
   theme: 'light',
   narrow: false,
 })
@@ -24,7 +25,20 @@ const statusText = computed(() =>
       ? 'Saving…'
       : '● All changes saved (just kidding, it resets on reload)',
 )
-const liveText = computed(() => props.notice || statusText.value)
+// What the live region says. It starts empty and only changes when something
+// happens: a save-status change, or an announcement from the app (which clears
+// it first so a repeated message is read again). Clearing never falls back to
+// the status text, so nothing is announced twice.
+const liveText = ref('')
+watch(statusText, (text) => {
+  liveText.value = text
+})
+watch(
+  () => props.announce,
+  (text) => {
+    liveText.value = text
+  },
+)
 
 // Server and first client render say ⌘K; the real platform is read after mount.
 const hintKeys = ref('⌘K')
@@ -145,9 +159,9 @@ button.tool:disabled {
   cursor: pointer;
 }
 .btn.primary {
-  background: #4f46e5;
-  border-color: #4f46e5;
-  color: #fff;
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
 }
 .sr {
   position: absolute;

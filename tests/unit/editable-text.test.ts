@@ -125,6 +125,18 @@ describe('EditableText', () => {
     expect(editor.canUndo.value).toBe(false)
   })
 
+  it('Enter during IME composition does not commit', async () => {
+    const { wrapper, editor } = setup()
+    const el = await startEdit(wrapper)
+    el.element.textContent = 'ni'
+    const ev = new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true, cancelable: true })
+    el.element.dispatchEvent(ev)
+    await nextTick()
+    expect(wrapper.find('h2').attributes('contenteditable')).toBeDefined()
+    expect(editor.editingKey.value).toBe('k')
+    expect(ev.defaultPrevented).toBe(false)
+  })
+
   it('leaves edit mode when another field starts editing', async () => {
     const { wrapper, editor } = setup()
     await startEdit(wrapper)
@@ -132,6 +144,61 @@ describe('EditableText', () => {
     await nextTick()
     expect(wrapper.find('h2').attributes('contenteditable')).toBeUndefined()
     expect(editor.canUndo.value).toBe(false)
+  })
+})
+
+describe('EditableText focus return', () => {
+  function frame(original = 'Orig') {
+    const editor = createEditor()
+    const wrapper = mount(
+      defineComponent({
+        provide: { [EditorKey as symbol]: editor },
+        render: () =>
+          h('div', { class: 'blk', tabindex: 0 }, [h(EditableText, { textKey: 'k', original, as: 'h2' })]),
+      }),
+      { attachTo: document.body },
+    )
+    return { wrapper, editor }
+  }
+
+  it('returns focus to the enclosing block after Enter', async () => {
+    const { wrapper } = frame()
+    const el = await startEdit(wrapper)
+    el.element.textContent = 'New'
+    await el.trigger('keydown', { key: 'Enter' })
+    await nextTick()
+    await nextTick()
+    expect(document.activeElement).toBe(wrapper.find('.blk').element)
+  })
+
+  it('returns focus to the enclosing block after Esc', async () => {
+    const { wrapper } = frame()
+    const el = await startEdit(wrapper)
+    await el.trigger('keydown', { key: 'Escape' })
+    await nextTick()
+    await nextTick()
+    expect(document.activeElement).toBe(wrapper.find('.blk').element)
+  })
+
+  it('returns focus to the enclosing block after an external reset', async () => {
+    const { wrapper, editor } = frame()
+    await startEdit(wrapper)
+    editor.reset()
+    await nextTick()
+    await nextTick()
+    expect(document.activeElement).toBe(wrapper.find('.blk').element)
+  })
+
+  it('does not steal focus when the edit ends by blur', async () => {
+    const { wrapper } = frame()
+    const outside = document.createElement('button')
+    document.body.append(outside)
+    const el = await startEdit(wrapper)
+    outside.focus()
+    await el.trigger('blur')
+    await nextTick()
+    await nextTick()
+    expect(document.activeElement).toBe(outside)
   })
 })
 
