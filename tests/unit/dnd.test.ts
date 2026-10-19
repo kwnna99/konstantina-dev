@@ -57,4 +57,24 @@ describe('useDragReorder', () => {
     expect(drops).toEqual([])
     expect(dnd.indicatorIndex.value).toBeNull()
   })
+
+  it('dropping on itself yields the same final index', () => {
+    const { dnd, drops } = setup()
+    // Upper half of the dragged item inserts at 1, lower half at 2; both mean "stay".
+    dnd.onDragStart('now', dragEvent(25))
+    dnd.onDrop(dragEvent(22))
+    dnd.onDragStart('now', dragEvent(25))
+    dnd.onDrop(dragEvent(38))
+    expect(drops).toEqual([
+      ['now', 1],
+      ['now', 1],
+    ])
+  })
+
+  it('dropping past the end yields the last index', () => {
+    const { dnd, drops } = setup()
+    dnd.onDragStart('hero', dragEvent(5))
+    dnd.onDrop(dragEvent(999))
+    expect(drops).toEqual([['hero', 2]])
+  })
 })

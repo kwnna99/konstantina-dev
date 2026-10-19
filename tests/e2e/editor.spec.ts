@@ -78,11 +78,27 @@ test('Alt+ArrowDown moves selected block; edges are no-ops', async ({ page }) =>
 })
 
 test('inline edit then Cmd+Z inside the text does not undo the editor', async ({ page }) => {
-  await page.locator('#block-hero .headline').dblclick()
+  // Create a history entry first so a leaked undo would be visible.
+  await layers(page).first().click()
+  await page.keyboard.press('Alt+ArrowDown')
+  await expect(layers(page).nth(1)).toHaveText(/Hero/)
+  const headline = page.locator('#block-hero .headline')
+  await headline.dblclick()
   await page.keyboard.type('Hello')
   await page.keyboard.press('Meta+Z')
   await page.keyboard.press('Control+Z')
-  await expect(page.getByRole('button', { name: 'Undo' })).toBeDisabled()
+  await expect(layers(page).nth(1)).toHaveText(/Hero/)
+  await expect(layers(page).first()).toHaveText(/Now/)
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled()
+  await expect(headline).toBeFocused()
+})
+
+test('Escape during an inline edit keeps the block selected', async ({ page }) => {
+  await page.locator('#block-hero .headline').dblclick()
+  await page.keyboard.type('Hello')
+  await page.keyboard.press('Escape')
+  await expect(inspector(page).getByRole('heading', { name: 'Hero block' })).toBeVisible()
+  await expect(page.locator('#block-hero .headline')).not.toContainText('Hello')
 })
 
 test('Escape deselects; clicking empty canvas deselects', async ({ page }) => {

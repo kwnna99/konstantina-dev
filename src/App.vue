@@ -69,9 +69,10 @@ function onKeydown(e: KeyboardEvent) {
 
 onMounted(() => {
   isMac = detectMac()
-  window.addEventListener('keydown', onKeydown)
+  // Capture phase: see the typing state before an inline edit handles the key itself.
+  window.addEventListener('keydown', onKeydown, true)
 })
-onUnmounted(() => window.removeEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
 </script>
 
 <template>
