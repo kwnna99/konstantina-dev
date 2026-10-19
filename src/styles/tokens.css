@@ -1,0 +1,35 @@
+/* Design tokens. Every colour in the app comes from here. */
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --canvas: #f4f4f5;
+  --panel: #ffffff;
+  --page: #ffffff;
+  --border: #e4e4e7;
+  --text: #18181b;
+  --muted: #52525b;
+  --faint: #71717a;
+  --accent: #6366f1;
+  --accent-2: #ec4899;
+  --accent-soft: #eef2ff;
+  --success: #15803d;
+  --focus: #6366f1;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #09090b;
+  --canvas: #09090b;
+  --panel: #18181b;
+  --page: #18181b;
+  --border: #3f3f46;
+  --text: #fafafa;
+  --muted: #a1a1aa;
+  --faint: #a1a1aa;
+  --accent: #6366f1;
+  --accent-2: #ec4899;
+  --accent-soft: #272a4a;
+  --success: #4ade80;
+  --focus: #a5b4fc;
+}
