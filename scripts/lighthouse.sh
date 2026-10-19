@@ -22,7 +22,8 @@ if curl -s -o /dev/null "http://localhost:$PORT/"; then
   exit 1
 fi
 
-# Run vite directly (not through npm) so the PID we kill is the server itself.
+# $! is the npx process that runs vite (not npm run, which adds another layer);
+# killing it on exit forwards SIGTERM to vite, so no server is left behind.
 npx vite preview --port "$PORT" --strictPort >/dev/null 2>&1 &
 SERVER_PID=$!
 trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT

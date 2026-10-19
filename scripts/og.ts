@@ -35,9 +35,19 @@ async function ensureServer(): Promise<ChildProcess | null> {
 const server = await ensureServer()
 const browser = await chromium.launch()
 try {
-  // Social card: editor mode, light theme, Hero selected.
-  const ctx = await browser.newContext({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 })
-  await ctx.addInitScript(() => localStorage.setItem('kd-theme', 'light'))
+  // Social card: editor mode, light theme, Hero selected, at rest (no fades caught
+  // mid-way), with the Mac shortcut hint (⌘K) whatever machine runs this.
+  const ctx = await browser.newContext({
+    viewport: { width: 1200, height: 630 },
+    deviceScaleFactor: 1,
+    reducedMotion: 'reduce',
+  })
+  // A plain string, so the TypeScript runner adds no helpers the page doesn't have.
+  await ctx.addInitScript(`
+    localStorage.setItem('kd-theme', 'light');
+    Object.defineProperty(Navigator.prototype, 'platform', { get() { return 'MacIntel' } });
+    Object.defineProperty(Navigator.prototype, 'userAgentData', { get() { return { platform: 'macOS' } } });
+  `)
   const page = await ctx.newPage()
   await page.goto(ORIGIN + '/')
   await page.waitForFunction(() => Boolean((document.querySelector('#app') as any)?.__vue_app__))
@@ -45,6 +55,8 @@ try {
   await page.locator('.blk.sel').waitFor()
   await page.evaluate(() => document.fonts.ready)
   await page.mouse.move(1190, 620)
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => null))))
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
   await page.screenshot({ path: 'public/og.png' })
   await ctx.close()
 
