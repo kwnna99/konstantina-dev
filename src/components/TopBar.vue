@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useEditor } from '../editor/store'
 import Icon from './Icon.vue'
 
-withDefaults(defineProps<{ preview?: boolean; theme?: 'light' | 'dark'; narrow?: boolean; notice?: string }>(), {
+const props = withDefaults(defineProps<{ preview?: boolean; theme?: 'light' | 'dark'; narrow?: boolean; notice?: string }>(), {
   preview: false,
   notice: '',
   theme: 'light',
@@ -16,6 +16,15 @@ const emit = defineEmits<{
 }>()
 
 const editor = useEditor()
+
+const statusText = computed(() =>
+  editor.status.value === 'saved'
+    ? '● All changes saved'
+    : editor.status.value === 'saving'
+      ? 'Saving…'
+      : '● All changes saved (just kidding, it resets on reload)',
+)
+const liveText = computed(() => props.notice || statusText.value)
 
 // Server and first client render say ⌘K; the real platform is read after mount.
 const hintKeys = ref('⌘K')
@@ -48,12 +57,10 @@ onMounted(() => {
         <span aria-hidden="true">{{ hintKeys }}</span>
         <span class="sr">Open command palette</span>
       </button>
-      <span class="status" :class="notice ? 'notice' : 'chrome'" role="status" aria-live="polite">
-        <template v-if="notice">{{ notice }}</template>
-        <template v-else-if="editor.status.value === 'saved'">● All changes saved</template>
-        <template v-else-if="editor.status.value === 'saving'">Saving…</template>
-        <template v-else>● All changes saved (just kidding, it resets on reload)</template>
-      </span>
+      <!-- One live region, always in the accessibility tree; the visible chips are aria-hidden. -->
+      <span class="sr" role="status" aria-live="polite">{{ liveText }}</span>
+      <span v-if="notice" class="status notice" aria-hidden="true">{{ notice }}</span>
+      <span v-else class="status chrome" aria-hidden="true">{{ statusText }}</span>
       <button type="button" class="btn primary mode-btn" @click="emit('toggle-preview')">
         {{ preview ? 'Back to editor' : narrow ? 'Done' : 'Preview' }}
       </button>

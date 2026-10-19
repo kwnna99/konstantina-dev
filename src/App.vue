@@ -39,7 +39,10 @@ const paletteOpen = ref(false)
 // A short message shown in the top bar's status live region.
 const notice = ref('')
 let noticeTimer: ReturnType<typeof setTimeout> | null = null
-function notify(msg: string) {
+async function notify(msg: string) {
+  // Clear first so an identical repeated notice is announced again.
+  notice.value = ''
+  await nextTick()
   notice.value = msg
   if (noticeTimer) clearTimeout(noticeTimer)
   noticeTimer = setTimeout(() => {

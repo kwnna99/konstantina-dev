@@ -21,7 +21,7 @@ async function ready(page: Page, url = '/') {
   await page.goto(url)
   await waitForApp(page)
   await expect(page.getByRole('button', { name: /^Switch to (dark|light) theme$/ })).toBeVisible()
-  if (isNarrow(page)) {
+  if (isNarrow(page) && !url.includes('preview')) {
     await page.getByRole('button', { name: /Open in editor/ }).click()
     await expect(page.locator('html')).toHaveAttribute('data-mode', 'editor')
   }
@@ -59,7 +59,8 @@ test('arrow keys wrap and move aria-activedescendant; Tab stays inside', async (
   expect(first).toBe('palette-opt-0')
   await page.keyboard.press('ArrowUp')
   const last = await combo(page).getAttribute('aria-activedescendant')
-  expect(last).not.toBe(first)
+  const count = await palette(page).getByRole('option').count()
+  expect(last).toBe(`palette-opt-${count - 1}`)
   await page.keyboard.press('ArrowDown')
   await expect(combo(page)).toHaveAttribute('aria-activedescendant', 'palette-opt-0')
   await page.keyboard.press('Tab')
@@ -75,12 +76,17 @@ test('undo shortcut typed into the input does not undo the editor', async ({ pag
   const start = await order()
   expect(start[start.length - 1]).not.toBe('block-contact')
   await openPalette(page)
-  await combo(page).fill('abc')
-  await page.keyboard.press('Meta+z')
-  await page.keyboard.press('Control+z')
-  await page.keyboard.press('Shift+Control+z')
+  await combo(page).pressSequentially('abc')
+  // The app must leave the key to the input: the event is not default-prevented.
+  await page.evaluate(() => {
+    ;(window as any).__prevented = null
+    window.addEventListener('keydown', (e) => ((window as any).__prevented = e.defaultPrevented))
+  })
+  await page.keyboard.press(`${await mod(page)}+z`)
+  expect(await page.evaluate(() => (window as any).__prevented)).toBe(false)
   expect(await order()).toEqual(start)
   await expect(palette(page)).toBeVisible()
+  await expect(combo(page)).toBeFocused()
 })
 
 test('backdrop click closes; shortcut also works in preview', async ({ page }) => {
@@ -99,4 +105,15 @@ test('copy email shows a notice in the status region', async ({ page, context })
   await combo(page).fill('copy email')
   await page.keyboard.press('Enter')
   await expect(page.getByRole('status')).toContainText(/Email copied|Couldn't copy/)
+})
+
+test('notice is announced through a live region in preview', async ({ page }) => {
+  await ready(page, '/?preview')
+  await expect(page.locator('html')).toHaveAttribute('data-mode', 'preview')
+  await openPalette(page)
+  await combo(page).fill('reset page')
+  await page.keyboard.press('Enter')
+  const status = page.getByRole('status')
+  await expect(status).toHaveText('Page reset')
+  expect(await status.evaluate((el) => getComputedStyle(el).display)).not.toBe('none')
 })
