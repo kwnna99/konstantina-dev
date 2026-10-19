@@ -9,6 +9,8 @@ const list = ref<HTMLElement | null>(null)
 
 const metaById = new Map<BlockId, BlockMeta>(content.blocks.map((b) => [b.id, b]))
 const rows = computed(() => editor.order.value.map((id) => metaById.get(id)!))
+// Roving tabindex: the list is one Tab stop, on the selected row (or the first row).
+const tabStop = computed(() => editor.selected.value ?? editor.order.value[0])
 
 const dnd = useDragReorder({
   getRects: () => Array.from(list.value?.querySelectorAll('.layer') ?? []).map((el) => el.getBoundingClientRect()),
@@ -25,9 +27,22 @@ function choose(id: BlockId) {
   })
 }
 
-function onKeydown(ev: KeyboardEvent, id: BlockId) {
+function focusRow(index: number) {
+  const els = list.value?.querySelectorAll<HTMLElement>('.layer')
+  els?.[Math.max(0, Math.min(index, els.length - 1))]?.focus()
+}
+
+function onKeydown(ev: KeyboardEvent, id: BlockId, index: number) {
   if (ev.target !== ev.currentTarget) return
-  if (ev.key === 'Enter' || ev.key === ' ') {
+  // Modified arrows (Alt+Arrow moves the block) are handled by the app.
+  if (ev.altKey || ev.ctrlKey || ev.metaKey) return
+  const last = rows.value.length - 1
+  const to =
+    ev.key === 'ArrowDown' ? index + 1 : ev.key === 'ArrowUp' ? index - 1 : ev.key === 'Home' ? 0 : ev.key === 'End' ? last : null
+  if (to !== null) {
+    ev.preventDefault()
+    focusRow(to)
+  } else if (ev.key === 'Enter' || ev.key === ' ') {
     ev.preventDefault()
     choose(id)
   }
@@ -51,11 +66,12 @@ function onKeydown(ev: KeyboardEvent, id: BlockId) {
         class="layer"
         :class="{ on: editor.selected.value === meta.id }"
         role="option"
-        tabindex="0"
+        :data-id="meta.id"
+        :tabindex="meta.id === tabStop ? 0 : -1"
         draggable="true"
         :aria-selected="editor.selected.value === meta.id"
         @click="choose(meta.id)"
-        @keydown="onKeydown($event, meta.id)"
+        @keydown="onKeydown($event, meta.id, i)"
         @dragstart="dnd.onDragStart(meta.id, $event)"
         @dragend="dnd.onDragEnd"
       >

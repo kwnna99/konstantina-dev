@@ -6,7 +6,7 @@ const { education } = content
 </script>
 
 <template>
-  <section>
+  <div>
     <EditableText text-key="career.title" original="How I got here" as="h2" id="heading-career" class="title" />
     <ol class="tl">
       <li v-for="role in content.career" :key="role.title + role.start" class="item">
@@ -20,7 +20,7 @@ const { education } = content
         <p>{{ education.note }}</p>
       </li>
     </ol>
-  </section>
+  </div>
 </template>
 
 <style scoped>

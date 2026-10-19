@@ -2,7 +2,7 @@
 import { useHead } from '@unhead/vue'
 import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { createEditor, EditorKey } from './editor/store'
-import { resolveShortcut } from './editor/shortcuts'
+import { isApplePlatform, resolveShortcut } from './editor/shortcuts'
 import { useMode } from './editor/mode'
 import { useTheme } from './editor/theme'
 import TopBar from './components/TopBar.vue'
@@ -11,7 +11,7 @@ import Canvas from './components/Canvas.vue'
 import Inspector from './components/Inspector.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import { buildCommands } from './editor/commands'
-import { content } from './content'
+import { content, type BlockId } from './content'
 
 const SITE = 'https://konstantina.dev/'
 const title = `${content.identity.name}, ${content.identity.role}`
@@ -61,7 +61,7 @@ provide(EditorKey, editor)
 const modeApi = useMode()
 const themeApi = useTheme()
 const { mode, isNarrow, setMode, toggle: toggleMode } = modeApi
-const { theme, toggle: toggleTheme } = themeApi
+const { toggle: toggleTheme } = themeApi
 
 // Preview is for reading: nothing stays selected and no text stays in edit mode.
 // Clearing editingKey makes an open inline edit leave without committing.
@@ -80,25 +80,43 @@ async function openEditor() {
 
 const paletteOpen = ref(false)
 
-// A short message shown in the top bar's status live region.
+// A short message shown in the top bar's status chip (and announced).
 const notice = ref('')
 // What screen readers hear; kept apart from the visible chip so it can be emptied and refilled.
 const announce = ref('')
 let noticeTimer: ReturnType<typeof setTimeout> | null = null
-async function notify(msg: string) {
-  // Clear first so an identical repeated notice is announced again.
-  notice.value = ''
+let announceTimer: ReturnType<typeof setTimeout> | null = null
+
+/** Says `msg` through the live region only, with nothing shown on screen. */
+async function say(msg: string) {
+  // Clear first so an identical repeated message is announced again.
   announce.value = ''
   await nextTick()
-  notice.value = msg
   announce.value = msg
+  if (announceTimer) clearTimeout(announceTimer)
+  announceTimer = setTimeout(() => {
+    announce.value = ''
+    announceTimer = null
+  }, 3000)
+}
+
+/** Shows `msg` in the status chip for a few seconds and announces it. */
+async function notify(msg: string) {
+  notice.value = msg
   if (noticeTimer) clearTimeout(noticeTimer)
   noticeTimer = setTimeout(() => {
     notice.value = ''
-    announce.value = ''
     noticeTimer = null
   }, 3000)
+  await say(msg)
 }
+
+// Selecting a block on the canvas is announced; deselecting is not.
+const labelById = new Map(content.blocks.map((b) => [b.id, b.label]))
+watch(editor.selected, (id) => {
+  if (id === null || mode.value !== 'editor') return
+  void say(`${labelById.get(id)} block selected`)
+})
 
 async function copy(text: string): Promise<boolean> {
   try {
@@ -123,11 +141,6 @@ const commands = computed(() =>
     : [],
 )
 
-function detectMac(): boolean {
-  const nav = navigator as Navigator & { userAgentData?: { platform?: string } }
-  return /Mac|iPhone|iPad/.test(nav.userAgentData?.platform ?? nav.platform ?? '')
-}
-
 function isTyping(): boolean {
   if (editor.editingKey.value !== null) return true
   const el = document.activeElement as HTMLElement | null
@@ -137,13 +150,20 @@ function isTyping(): boolean {
 
 let isMac = false
 
+/** The block of the focused Layers row, if a row has focus. */
+function focusedLayer(): BlockId | null {
+  const row = (document.activeElement as HTMLElement | null)?.closest<HTMLElement>('.layer[data-id]')
+  return (row?.dataset.id as BlockId | undefined) ?? null
+}
+
 function onKeydown(e: KeyboardEvent) {
   const editingText = isTyping()
+  const layer = focusedLayer()
   const action = resolveShortcut(e, {
     isMac,
     editingText,
     paletteOpen: paletteOpen.value,
-    hasSelection: editor.selected.value !== null,
+    hasSelection: editor.selected.value !== null || layer !== null,
   })
   if (!action) return
   // Preview is a plain document: only the palette and Escape work there.
@@ -166,13 +186,17 @@ function onKeydown(e: KeyboardEvent) {
       break
     case 'moveUp':
     case 'moveDown': {
-      const id = editor.selected.value
+      // On a focused Layers row the row's block moves; elsewhere the selected block does.
+      const id = layer ?? editor.selected.value
       if (id === null) break
+      if (layer) editor.select(layer)
       editor.moveBy(id, action === 'moveUp' ? -1 : 1)
-      // Reordering moves the DOM node, which drops focus; put it back.
+      // Reordering moves the DOM node, which drops focus; put it back where it was.
       void Promise.resolve().then(() => {
-        const frame = document.getElementById('block-' + id)?.closest<HTMLElement>('.blk')
-        frame?.focus({ preventScroll: true })
+        const target = layer
+          ? document.querySelector<HTMLElement>(`.layer[data-id="${id}"]`)
+          : document.getElementById('block-' + id)?.closest<HTMLElement>('.blk')
+        target?.focus({ preventScroll: true })
       })
       break
     }
@@ -180,22 +204,20 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 onMounted(() => {
-  isMac = detectMac()
+  isMac = isApplePlatform(navigator)
   // Capture phase: see the typing state before an inline edit handles the key itself.
   window.addEventListener('keydown', onKeydown, true)
 })
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown, true)
   if (noticeTimer) clearTimeout(noticeTimer)
+  if (announceTimer) clearTimeout(announceTimer)
 })
 </script>
 
 <template>
   <div class="app">
     <TopBar
-      :preview="mode === 'preview'"
-      :theme="theme"
-      :narrow="isNarrow"
       :notice="notice"
       :announce="announce"
       @toggle-preview="toggleMode"

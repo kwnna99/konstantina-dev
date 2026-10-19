@@ -42,9 +42,11 @@ function onKeydown(ev: KeyboardEvent) {
     @keydown="onKeydown"
   >
     <span class="tagl" aria-hidden="true">{{ meta.label }} block</span>
+    <!-- Mouse only: keyboard users move blocks with Alt+Arrow, so the handle is no Tab stop. -->
     <button
       type="button"
       class="handle"
+      tabindex="-1"
       draggable="true"
       :aria-label="`Drag ${meta.label} block`"
       @dragstart="emit('dragstart-block', meta.id, $event)"
@@ -103,13 +105,16 @@ function onKeydown(ev: KeyboardEvent) {
 :global([data-mode='editor'] .handle) {
   display: block;
 }
-:global([data-mode='editor'] .blk:hover) {
-  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+/* Hover hints only where there is a real pointer: on touch screens :hover sticks after a tap. */
+@media (hover: hover) {
+  :global([data-mode='editor'] .blk:hover) {
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  :global([data-mode='editor'] .blk:hover .tagl),
+  :global([data-mode='editor'] .blk:hover .handle) {
+    opacity: 1;
+  }
 }
-:global([data-mode='editor'] .blk:hover .tagl) {
-  opacity: 1;
-}
-:global([data-mode='editor'] .blk:hover .handle),
 :global([data-mode='editor'] .blk:focus-within .handle),
 :global([data-mode='editor'] .blk.sel .handle) {
   opacity: 1;

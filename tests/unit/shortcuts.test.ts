@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveShortcut, type KeyLike } from '../../src/editor/shortcuts'
+import { isApplePlatform, resolveShortcut, type KeyLike } from '../../src/editor/shortcuts'
 
 const k = (key: string, mods: Partial<KeyLike> = {}): KeyLike => ({
   key,
@@ -64,5 +64,21 @@ describe('resolveShortcut', () => {
 
   it('returns null for unrelated keys', () => {
     expect(resolveShortcut(k('a'), base)).toBeNull()
+  })
+})
+
+describe('isApplePlatform', () => {
+  it('recognises Chromium on macOS ("macOS") and Safari/Firefox ("MacIntel", "iPhone", "iPad")', () => {
+    expect(isApplePlatform({ userAgentData: { platform: 'macOS' }, platform: 'MacIntel' })).toBe(true)
+    expect(isApplePlatform({ platform: 'MacIntel' })).toBe(true)
+    expect(isApplePlatform({ platform: 'iPhone' })).toBe(true)
+    expect(isApplePlatform({ platform: 'iPad' })).toBe(true)
+  })
+
+  it('is false elsewhere', () => {
+    expect(isApplePlatform({ userAgentData: { platform: 'Windows' }, platform: 'Win32' })).toBe(false)
+    expect(isApplePlatform({ userAgentData: { platform: 'Linux' }, platform: 'Linux x86_64' })).toBe(false)
+    expect(isApplePlatform({ userAgentData: { platform: '' }, platform: 'Linux armv81' })).toBe(false)
+    expect(isApplePlatform({})).toBe(false)
   })
 })

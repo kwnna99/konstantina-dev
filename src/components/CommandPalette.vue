@@ -22,18 +22,37 @@ watch(active, async () => {
 })
 
 let previous: HTMLElement | null = null
+let chosen: Command | null = null
 onMounted(() => {
   previous = document.activeElement as HTMLElement | null
   input.value?.focus()
 })
-onBeforeUnmount(() => {
+
+/** Focuses `el` if it can take focus right now (connected, visible, focusable). */
+function tryFocus(el: HTMLElement | null | undefined): boolean {
+  if (!el || !el.isConnected) return false
   // preventScroll: a "Jump to" command has just scrolled; don't undo it.
-  if (previous && previous.isConnected) previous.focus({ preventScroll: true })
+  el.focus({ preventScroll: true })
+  return document.activeElement === el
+}
+
+onBeforeUnmount(() => {
+  const cmd = chosen
+  const prev = previous
+  // Wait for the rest of this update (a mode switch re-renders the page) before choosing.
+  void nextTick(() => {
+    if (tryFocus(cmd?.focusTarget?.())) return
+    if (tryFocus(prev)) return
+    // The old element is gone or hidden (e.g. after switching mode): use the mode toggle.
+    tryFocus(document.querySelector<HTMLElement>('.mode-btn')) ||
+      tryFocus(document.querySelector<HTMLElement>('.open-editor'))
+  })
 })
 
 function runAt(i: number) {
   const cmd = results.value[i]
   if (!cmd) return
+  chosen = cmd
   emit('close')
   void cmd.run()
 }

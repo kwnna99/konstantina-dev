@@ -47,3 +47,32 @@ describe('App notify', () => {
     wrapper.unmount()
   })
 })
+
+describe('App selection announcement', () => {
+  it('announces "{Label} block selected" when the selected block changes, and nothing on deselect', async () => {
+    const wrapper = mount(App, { global: { plugins: [createHead()] }, attachTo: document.body })
+    await flushPromises()
+    const status = document.querySelector('[role="status"]')!
+    const live = () => status.textContent!.trim()
+    const seen: string[] = []
+    const observer = new MutationObserver(() => seen.push(live()))
+    observer.observe(status, { childList: true, characterData: true, subtree: true })
+
+    document.querySelector<HTMLElement>('#block-stack')!.click()
+    await flushPromises()
+    expect(live()).toBe('Stack block selected')
+
+    document.querySelector<HTMLElement>('#block-contact')!.click()
+    await flushPromises()
+    expect(live()).toBe('Contact block selected')
+
+    seen.length = 0
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await flushPromises()
+    expect(document.querySelector('.blk.sel')).toBeNull()
+    // Deselecting says nothing new.
+    expect(seen.filter((t) => t !== '' && t !== 'Contact block selected')).toEqual([])
+    observer.disconnect()
+    wrapper.unmount()
+  })
+})

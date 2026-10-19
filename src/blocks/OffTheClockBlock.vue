@@ -6,7 +6,7 @@ const { offClock, links } = content
 </script>
 
 <template>
-  <section>
+  <div>
     <EditableText text-key="offclock.title" original="Off the clock" as="h2" id="heading-offclock" class="title" />
     <EditableText text-key="offclock.leadLine" :original="offClock.leadLine" as="p" class="lead" />
     <p class="reads">
@@ -18,7 +18,7 @@ const { offClock, links } = content
         <span v-if="item.body"> · {{ item.body }}</span>
       </li>
     </ul>
-  </section>
+  </div>
 </template>
 
 <style scoped>

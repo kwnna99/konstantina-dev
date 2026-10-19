@@ -4,7 +4,7 @@ import EditableText from '../components/EditableText.vue'
 </script>
 
 <template>
-  <section>
+  <div>
     <EditableText text-key="stack.title" original="Stack" as="h2" id="heading-stack" class="title" />
     <p class="focus">{{ content.identity.focusLine }}</p>
     <ul class="tags">
@@ -12,7 +12,7 @@ import EditableText from '../components/EditableText.vue'
         <i :style="{ background: tag.color }" aria-hidden="true"></i>{{ tag.name }}
       </li>
     </ul>
-  </section>
+  </div>
 </template>
 
 <style scoped>

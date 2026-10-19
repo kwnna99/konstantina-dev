@@ -16,6 +16,15 @@ export interface ShortcutContext {
 }
 
 /**
+ * True on Apple platforms, where the command modifier is ⌘ rather than Ctrl.
+ * Chromium reports `userAgentData.platform` as "macOS" (lower-case m), others
+ * report `navigator.platform` as "MacIntel", "iPhone" or "iPad".
+ */
+export function isApplePlatform(nav: { platform?: string; userAgentData?: { platform?: string } }): boolean {
+  return /mac|iphone|ipad/i.test(nav.userAgentData?.platform || nav.platform || '')
+}
+
+/**
  * Maps a key event to an editor action, or null when the event is not ours.
  * While the visitor is typing (inline edit or palette input) only Escape is
  * intercepted, plus the palette shortcut when the palette is already open so

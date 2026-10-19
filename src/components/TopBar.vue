@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useEditor } from '../editor/store'
+import { isApplePlatform } from '../editor/shortcuts'
 import Icon from './Icon.vue'
 
-const props = withDefaults(defineProps<{ preview?: boolean; theme?: 'light' | 'dark'; narrow?: boolean; notice?: string; announce?: string }>(), {
-  preview: false,
+// The mode button's label and the theme button's icon and name are all rendered;
+// CSS on <html data-mode / data-theme> shows the right one. index.html sets those
+// attributes before first paint, so the bar is right before (or without) hydration.
+const props = withDefaults(defineProps<{ notice?: string; announce?: string }>(), {
   notice: '',
   announce: '',
-  theme: 'light',
-  narrow: false,
 })
 const emit = defineEmits<{
   'toggle-preview': []
@@ -43,9 +44,7 @@ watch(
 // Server and first client render say ⌘K; the real platform is read after mount.
 const hintKeys = ref('⌘K')
 onMounted(() => {
-  const nav = navigator as Navigator & { userAgentData?: { platform?: string } }
-  const mac = /Mac|iPhone|iPad/.test(nav.userAgentData?.platform ?? nav.platform ?? '')
-  hintKeys.value = mac ? '⌘K' : 'Ctrl K'
+  hintKeys.value = isApplePlatform(navigator) ? '⌘K' : 'Ctrl K'
 })
 </script>
 
@@ -76,15 +75,13 @@ onMounted(() => {
       <span v-if="notice" class="status notice" aria-hidden="true">{{ notice }}</span>
       <span v-else class="status chrome" aria-hidden="true">{{ statusText }}</span>
       <button type="button" class="btn primary mode-btn" @click="emit('toggle-preview')">
-        {{ preview ? 'Back to editor' : narrow ? 'Done' : 'Preview' }}
+        <span class="lbl-preview">Preview</span>
+        <span class="lbl-done">Done</span>
+        <span class="lbl-back">Back to editor</span>
       </button>
-      <button
-        type="button"
-        class="tool theme"
-        :aria-label="theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
-        @click="emit('toggle-theme')"
-      >
-        <Icon :name="theme === 'dark' ? 'moon' : 'sun'" />
+      <button type="button" class="tool theme" @click="emit('toggle-theme')">
+        <span class="when-light"><Icon name="sun" /><span class="sr">Switch to dark theme</span></span>
+        <span class="when-dark"><Icon name="moon" /><span class="sr">Switch to light theme</span></span>
       </button>
     </div>
   </header>
@@ -171,6 +168,27 @@ button.tool:disabled {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+/*
+ * Exactly one label and one theme face is displayed; the others are display:none,
+ * which also keeps them out of the accessibility tree.
+ */
+.when-light,
+.when-dark {
+  display: grid;
+  place-items: center;
+}
+:global(:root[data-mode='editor'] .mode-btn .lbl-back),
+:global(:root[data-mode='preview'] .mode-btn .lbl-preview),
+:global(:root[data-mode='preview'] .mode-btn .lbl-done),
+:global(:root[data-theme='dark'] .theme .when-light),
+:global(:root:not([data-theme='dark']) .theme .when-dark) {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .lbl-done {
+    display: none;
+  }
+}
 /* Narrow screens: keep only what fits and works by touch. */
 @media (max-width: 1023.98px) {
   .bar {
@@ -182,6 +200,7 @@ button.tool:disabled {
   }
   .deco,
   .hint,
+  .lbl-preview,
   .status:not(.notice) {
     display: none;
   }

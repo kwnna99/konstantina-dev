@@ -6,7 +6,7 @@ const { links, contact } = content
 </script>
 
 <template>
-  <section>
+  <div>
     <EditableText text-key="contact.title" original="Say hi" as="h2" id="heading-contact" class="title" />
     <ul class="links">
       <li><a :href="links.github" target="_blank" rel="noopener">GitHub</a></li>
@@ -15,7 +15,7 @@ const { links, contact } = content
       <li><a :href="links.source" target="_blank" rel="noopener">View source</a></li>
     </ul>
     <p class="freelance">{{ contact.freelanceLine }}</p>
-  </section>
+  </div>
 </template>
 
 <style scoped>

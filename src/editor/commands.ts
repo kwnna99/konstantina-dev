@@ -8,6 +8,8 @@ export interface Command {
   label: string
   group: 'Jump to' | 'View' | 'Links' | 'Page'
   run(): void | Promise<void>
+  /** Where focus goes once the palette has closed. Defaults to where it was before. */
+  focusTarget?(): HTMLElement | null
 }
 
 export interface CommandDeps {
@@ -30,6 +32,14 @@ function scrollToBlock(id: BlockId) {
   })
 }
 
+/** The block's frame in the editor; its heading in preview, where frames are not focusable. */
+function blockFocusTarget(id: BlockId, inEditor: boolean): HTMLElement | null {
+  if (inEditor) return document.getElementById('block-' + id)?.closest<HTMLElement>('.blk') ?? null
+  const heading = document.getElementById('heading-' + id)
+  if (heading && !heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1')
+  return heading
+}
+
 export function buildCommands(deps: CommandDeps): Command[] {
   const { editor, mode, theme, open, copy, notify } = deps
   const { links } = content
@@ -44,6 +54,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       if (mode.mode.value === 'editor') editor.select(id)
       scrollToBlock(id)
     },
+    focusTarget: () => blockFocusTarget(id, mode.mode.value === 'editor'),
   }))
 
   const link = (id: string, label: string, url: string): Command => ({

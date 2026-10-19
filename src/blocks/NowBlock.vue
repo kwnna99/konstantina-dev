@@ -4,7 +4,7 @@ import EditableText from '../components/EditableText.vue'
 </script>
 
 <template>
-  <section>
+  <div>
     <EditableText text-key="now.title" original="What I do now" as="h2" id="heading-now" class="title" />
     <ul class="grid">
       <li v-for="card in content.now" :key="card.title" class="card">
@@ -12,7 +12,7 @@ import EditableText from '../components/EditableText.vue'
         <span v-if="card.body">{{ card.body }}</span>
       </li>
     </ul>
-  </section>
+  </div>
 </template>
 
 <style scoped>

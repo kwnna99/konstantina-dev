@@ -17,12 +17,16 @@ function render(comp: Component) {
 const block = (id: BlockId) => render(blockComponents[id])
 
 describe('blocks', () => {
-  it('hero: h1 name, headline, focus sentence, hiring link', () => {
+  it('hero: h1 name, headline, focus sentence, stack line, hiring link', () => {
     const w = block('hero')
     expect(w.find('h1').text()).toBe('Konstantina Roumelioti')
     expect(w.find('h1').attributes('id')).toBe('heading-hero')
     expect(w.text()).toContain('I build tools for builders.')
     expect(w.text()).toContain('frontend focus')
+    // The base stack is named in the first screen, right under the intro.
+    const ps = w.findAll('p').map((p) => p.classes())
+    expect(ps.findIndex((c) => c.includes('stack-line'))).toBe(ps.findIndex((c) => c.includes('intro')) + 1)
+    expect(w.find('p.stack-line').text()).toBe('Vue/TypeScript first, comfortable across PHP/Laravel and data.')
     const a = w.find(`a[href="${content.links.jobPosting}"]`)
     expect(a.text()).toContain('My team is hiring')
     expect(a.attributes('rel')).toBe('noopener')
@@ -98,6 +102,10 @@ describe('blocks', () => {
 
   it('registry covers every BlockId', () => {
     expect(Object.keys(blockComponents).sort()).toEqual([...DEFAULT_ORDER].sort())
+  })
+
+  it('blocks render no sectioning element of their own (the frame is the section)', () => {
+    for (const id of DEFAULT_ORDER) expect(block(id).findAll('section')).toHaveLength(0)
   })
 
   it('exactly one h1 across all blocks', () => {

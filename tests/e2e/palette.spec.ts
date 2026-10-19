@@ -9,7 +9,7 @@ const combo = (page: Page) => page.getByRole('combobox')
 async function mod(page: Page) {
   const mac = await page.evaluate(() => {
     const nav = navigator as Navigator & { userAgentData?: { platform?: string } }
-    return /Mac|iPhone|iPad/.test(nav.userAgentData?.platform ?? nav.platform ?? '')
+    return /mac|iphone|ipad/i.test(nav.userAgentData?.platform || nav.platform || '')
   })
   return mac ? 'Meta' : 'Control'
 }
@@ -98,13 +98,69 @@ test('backdrop click closes; shortcut also works in preview', async ({ page }) =
   await expect(palette(page)).toBeHidden()
 })
 
-test('copy email shows a notice in the status region', async ({ page, context }) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {})
+/** Replaces the clipboard with one that accepts or refuses, and records what it was given. */
+async function stubClipboard(page: Page, accept: boolean) {
+  await page.addInitScript((ok) => {
+    const w = window as Window & { __copied?: string }
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: (text: string) => {
+          w.__copied = text
+          return ok ? Promise.resolve() : Promise.reject(new DOMException('Denied', 'NotAllowedError'))
+        },
+      },
+    })
+  }, accept)
+}
+
+async function copyEmail(page: Page) {
   await ready(page)
   await openPalette(page)
   await combo(page).fill('copy email')
   await page.keyboard.press('Enter')
-  await expect(page.getByRole('status')).toContainText(/Email copied|Couldn't copy/)
+}
+
+test('copy email: copies the address and says so', async ({ page }) => {
+  await stubClipboard(page, true)
+  await copyEmail(page)
+  await expect(page.getByRole('status')).toHaveText('Email copied')
+  expect(await page.evaluate(() => (window as Window & { __copied?: string }).__copied)).toMatch(/^[^@\s]+@[^@\s]+$/)
+})
+
+test('copy email: when the clipboard refuses, shows the address instead', async ({ page }) => {
+  await stubClipboard(page, false)
+  await copyEmail(page)
+  await expect(page.getByRole('status')).toHaveText(/^Couldn't copy — it's [^@\s]+@[^@\s]+$/)
+})
+
+test('Jump to: focus lands on the block in the editor and on its heading in preview', async ({ page }) => {
+  await ready(page)
+  await openPalette(page)
+  await combo(page).fill('jump contact')
+  await page.keyboard.press('Enter')
+  await expect(palette(page)).toBeHidden()
+  await expect(page.getByRole('group', { name: 'Contact block' })).toBeFocused()
+
+  await ready(page, '/?preview')
+  await openPalette(page)
+  await combo(page).fill('jump career')
+  await page.keyboard.press('Enter')
+  await expect(palette(page)).toBeHidden()
+  await expect(page.locator('#heading-career')).toBeFocused()
+  await expect(page.locator('#heading-career')).toBeInViewport()
+})
+
+test('Toggle preview: focus moves to the visible mode button when the old element is hidden', async ({ page }) => {
+  test.skip(isNarrow(page), 'needs the layers panel')
+  await ready(page)
+  await page.locator('.layers').getByRole('option', { name: /Stack/ }).click()
+  await expect(page.locator('.layers').getByRole('option', { name: /Stack/ })).toBeFocused()
+  await openPalette(page)
+  await combo(page).fill('toggle preview')
+  await page.keyboard.press('Enter')
+  await expect(page.locator('html')).toHaveAttribute('data-mode', 'preview')
+  await expect(page.getByRole('button', { name: 'Back to editor' })).toBeFocused()
 })
 
 test('notice is announced through a live region in preview', async ({ page }) => {

@@ -59,6 +59,28 @@ test.describe('desktop', () => {
     await expect(page.getByRole('group', { name: 'Stack block' })).not.toHaveAttribute('aria-current', 'true')
   })
 
+  test('before the app loads, the top bar already matches the mode and theme', async ({ page }) => {
+    // Block the bundle: only the inline head script runs, as when JavaScript fails to load.
+    await page.route(/\.js$/, (route) => route.abort())
+    await page.addInitScript(() => localStorage.setItem('kd-theme', 'dark'))
+    await page.goto('/?preview')
+    await expect(html(page)).toHaveAttribute('data-mode', 'preview')
+    await expect(html(page)).toHaveAttribute('data-theme', 'dark')
+    await expect(page.getByRole('button', { name: 'Back to editor' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Preview', exact: true })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Switch to light theme' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Switch to dark theme' })).toHaveCount(0)
+    expect(await page.locator('.theme svg:visible').count()).toBe(1)
+
+    await page.unroute(/\.js$/)
+    await page.goto('/?preview')
+    await mounted(page)
+    await expect(page.getByRole('button', { name: 'Back to editor' })).toBeVisible()
+    await page.getByRole('button', { name: 'Back to editor' }).click()
+    await expect(page.getByRole('button', { name: 'Preview', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Back to editor' })).toHaveCount(0)
+  })
+
   test('desktop preview hides outlines and handles', async ({ page }) => {
     await page.goto('/?preview')
     await mounted(page)
@@ -105,6 +127,14 @@ test.describe('mobile', () => {
     await expect(html(page)).toHaveAttribute('data-mode', 'preview')
     await expect(page.locator('.layers')).toBeHidden()
     await expect(page.getByRole('button', { name: 'Open in editor' })).toBeVisible()
+  })
+
+  test('the first screen names the base stack', async ({ page }) => {
+    await page.goto('/')
+    await mounted(page)
+    const line = page.locator('#block-hero .stack-line')
+    await expect(line).toContainText('Vue/TypeScript')
+    await expect(line).toBeInViewport({ ratio: 1 })
   })
 
   test('mobile: Open in editor → tap block → sheet → Move down', async ({ page }) => {

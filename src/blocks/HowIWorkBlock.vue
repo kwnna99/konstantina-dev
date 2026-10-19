@@ -4,7 +4,7 @@ import EditableText from '../components/EditableText.vue'
 </script>
 
 <template>
-  <section>
+  <div>
     <EditableText text-key="how.title" original="How I work" as="h2" id="heading-how" class="title" />
     <ul class="grid">
       <li
@@ -16,7 +16,7 @@ import EditableText from '../components/EditableText.vue'
         {{ card.title }}
       </li>
     </ul>
-  </section>
+  </div>
 </template>
 
 <style scoped>

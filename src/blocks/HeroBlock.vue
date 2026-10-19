@@ -2,7 +2,7 @@
 import { content } from '../content'
 import EditableText from '../components/EditableText.vue'
 
-const { identity, links } = content
+const { identity, links, stack } = content
 </script>
 
 <template>
@@ -10,6 +10,7 @@ const { identity, links } = content
     <h1 id="heading-hero" class="name">{{ identity.name }}</h1>
     <EditableText text-key="hero.headline" :original="identity.headline" as="p" class="headline" />
     <EditableText text-key="hero.intro" :original="identity.intro" as="p" class="intro" />
+    <p class="stack-line">{{ stack.tagline }}</p>
     <a class="pill" :href="links.jobPosting" target="_blank" rel="noopener">
       <span aria-hidden="true">●</span> My team is hiring →
     </a>
@@ -45,6 +46,13 @@ const { identity, links } = content
   max-width: 34rem;
   font-size: 1rem;
   line-height: 1.6;
+  color: var(--muted);
+}
+.stack-line {
+  margin: 6px 0 0;
+  max-width: 34rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
   color: var(--muted);
 }
 .pill {

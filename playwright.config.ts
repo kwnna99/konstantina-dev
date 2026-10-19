@@ -14,7 +14,7 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
     },
     { name: 'mobile', testIgnore: /editor\.spec/, use: { ...devices['Pixel 7'] } },
-    { name: 'iphone', testIgnore: /editor\.spec|a11y\.spec/, use: { ...devices['iPhone 14'], browserName: 'webkit' } },
+    { name: 'iphone', testIgnore: /editor\.spec/, use: { ...devices['iPhone 14'], browserName: 'webkit' } },
     { name: 'firefox', use: { ...devices['Desktop Firefox'], viewport: { width: 1280, height: 800 } } },
   ],
 })

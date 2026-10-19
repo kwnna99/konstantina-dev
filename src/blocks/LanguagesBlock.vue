@@ -4,7 +4,7 @@ import EditableText from '../components/EditableText.vue'
 </script>
 
 <template>
-  <section>
+  <div>
     <EditableText text-key="languages.title" original="Languages" as="h2" id="heading-languages" class="title" />
     <ul class="rows">
       <li v-for="lang in content.languages" :key="lang.name" class="row">
@@ -12,7 +12,7 @@ import EditableText from '../components/EditableText.vue'
         <span>{{ lang.level }}</span>
       </li>
     </ul>
-  </section>
+  </div>
 </template>
 
 <style scoped>
