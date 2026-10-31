@@ -133,7 +133,7 @@ test.describe('mobile', () => {
     await page.goto('/')
     await mounted(page)
     const line = page.locator('#block-hero .stack-line')
-    await expect(line).toContainText('Vue/TypeScript')
+    await expect(line).toContainText('Vue, TypeScript')
     await expect(line).toBeInViewport({ ratio: 1 })
   })
 

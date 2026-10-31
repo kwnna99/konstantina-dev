@@ -26,7 +26,7 @@ describe('blocks', () => {
     // The base stack is named in the first screen, right under the intro.
     const ps = w.findAll('p').map((p) => p.classes())
     expect(ps.findIndex((c) => c.includes('stack-line'))).toBe(ps.findIndex((c) => c.includes('intro')) + 1)
-    expect(w.find('p.stack-line').text()).toBe('Vue/TypeScript first, comfortable across PHP/Laravel and data.')
+    expect(w.find('p.stack-line').text()).toBe(content.stack.tagline)
     const a = w.find(`a[href="${content.links.jobPosting}"]`)
     expect(a.text()).toContain('My team is hiring')
     expect(a.attributes('rel')).toBe('noopener')
